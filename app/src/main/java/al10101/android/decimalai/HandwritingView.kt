@@ -27,7 +27,7 @@ class HandwritingView(context: Context): GLSurfaceView(context) {
         when (ev.action and MotionEvent.ACTION_MASK) {
 
             MotionEvent.ACTION_MOVE -> {
-                Log.d(VIEW_TAG, "X= %6.2f  Y=%6.2f".format(normalizedX, normalizedY))
+                Log.d(VIEW_TAG, "X= %8.4f  Y=%8.4f".format(normalizedX, normalizedY))
             }
 
             MotionEvent.ACTION_UP -> {
@@ -37,6 +37,7 @@ class HandwritingView(context: Context): GLSurfaceView(context) {
         }
 
         return true
+
     }
 
 }

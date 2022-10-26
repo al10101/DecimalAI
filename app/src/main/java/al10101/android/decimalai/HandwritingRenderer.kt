@@ -10,7 +10,7 @@ import javax.microedition.khronos.opengles.GL10
 
 class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer {
 
-    private lateinit var canvas: Quad
+    private lateinit var canvas: Grid
     private lateinit var canvasProgram: CanvasShaderProgram
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
@@ -58,8 +58,9 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         }
 
         // Finally, we define the quad with the corrected dimensions
-        val canvasColor = floatArrayOf(1f, 0f, 0f, 1f)
-        canvas = Quad(qWidth, qHeight, canvasColor)
+        val canvasColor = floatArrayOf(0f, 0f, 0f, 1f)
+        val slicesPerAxis = 20
+        canvas = Grid(qWidth, qHeight, canvasColor, slicesPerAxis, slicesPerAxis)
 
     }
 

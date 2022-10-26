@@ -1,5 +1,6 @@
 package al10101.android.decimalai
 
+import al10101.android.decimalai.utils.NANOSECONDS
 import al10101.android.decimalai.utils.RENDERER_TAG
 import android.content.Context
 import android.opengl.GLES20.*
@@ -10,8 +11,16 @@ import javax.microedition.khronos.opengles.GL10
 
 class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer {
 
+    private var landscape = false
+    private var ratio = 0f
+
     private lateinit var canvas: Grid
     private lateinit var canvasProgram: CanvasShaderProgram
+
+    private var globalStartTime: Long = 0
+    private var currentTime = 0f
+    private val timeBeforeRestart = 2f
+    private var timeSinceLastTouch = 0f
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
 
@@ -25,6 +34,8 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
             fragmentShader
         )
 
+        globalStartTime = System.nanoTime()
+
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
@@ -36,8 +47,8 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
         // First we need to know if the screen's orientation is set vertically (portrait) or horizontally (landscape).
         // We will use the ratio for that
-        val landscape = width > height
-        val ratio = if (landscape) {
+        landscape = width > height
+        ratio = if (landscape) {
             width.toFloat() / height.toFloat()
         } else {
             height.toFloat() / width.toFloat()
@@ -61,12 +72,15 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
         // Finally, we define the quad with the corrected dimensions
         val black = floatArrayOf(0f, 0f, 0f, 1f)
-        val slicesPerAxis = 20
+        val slicesPerAxis = 60
         canvas = Grid(qWidth, qHeight, black, slicesPerAxis, slicesPerAxis)
 
     }
 
     override fun onDrawFrame(p0: GL10?) {
+
+        // Update timer
+        currentTime = (System.nanoTime() - globalStartTime) / NANOSECONDS
 
         // Clear the canvas
         glClear(GL_COLOR_BUFFER_BIT)
@@ -81,16 +95,23 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
     fun onTouch(normalizedX: Float, normalizedY: Float) {
 
+        // Restart canvas if there has passed enough time since the last time this function was called
+        if (currentTime - timeSinceLastTouch > timeBeforeRestart) {
+            canvas.resetColors()
+        }
+
+        // Update timer
+        timeSinceLastTouch = currentTime
+
         // When the user touches the canvas, the corresponding point must be recolored
         val white = floatArrayOf(1f, 1f, 1f, 1f)
-        canvas.updateColor(normalizedX, normalizedY, white)
+        canvas.updateColor(landscape, ratio, normalizedX, normalizedY, white)
 
     }
 
     fun onStop() {
 
-        // When the user releases the finger from the screen, the canvas stops the drawing
-        canvas.resetColors()
+        // TODO: Predict Number with NN
 
     }
 

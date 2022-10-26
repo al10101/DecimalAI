@@ -3,8 +3,9 @@ package al10101.android.decimalai
 import al10101.android.decimalai.utils.BYTES_PER_FLOAT
 import al10101.android.decimalai.utils.VertexArray
 import android.opengl.GLES20.*
-import java.nio.ByteBuffer
 import java.nio.IntBuffer
+import kotlin.math.abs
+import kotlin.math.min
 import kotlin.math.sqrt
 
 private const val POSITION_COMPONENT_COUNT = 2
@@ -75,28 +76,38 @@ class Grid(width: Float, height: Float, private val rgba: FloatArray,
 
     }
 
-    fun updateColor(touchX: Float, touchY: Float, newRgba: FloatArray) {
+    fun updateColor(landscape: Boolean, ratio: Float, touchX: Float, touchY: Float, newRgba: FloatArray) {
 
-        // With a fixed radius, compute the distance from the touch to every vertex
-        val radius = 0.05f
+        val maxValue = 0.16f
+
+        // Iterate through all vertices to check and update each one
         var offset = 0
         for (i in 0 until totalVertices) {
 
             // Coordinates
             val x = vertices[offset++]
             val y = vertices[offset++]
+
+            // Since all these operations are being performed in NDC space, we must transform back when coloring
+            // to counter the fact that there was no transformation applied to the event (touch) coordinates
             val diff = floatArrayOf(touchX - x, touchY - y)
+            if (landscape) {
+                diff[0] *= ratio
+            } else {
+                diff[1] *= ratio
+            }
+
             val length = sqrt(diff[0]*diff[0] + diff[1]*diff[1])
 
-            // Compute the new color with a smooth step as a function of the length
-            
-
-            // Change the color of the current vertex
-            if (length < radius) {
-                vertices[offset++] = newRgba[0]
-                vertices[offset++] = newRgba[1]
-                vertices[offset++] = newRgba[2]
-                vertices[offset++] = newRgba[3]
+            // Clamp the color change to 0 to maxValue
+            if (length < maxValue) {
+                // Compute smooth step and add to the color
+                var sx = (length - maxValue) / (-maxValue)
+                sx *= sx * (3f - 2f * sx)
+                vertices[offset++] += newRgba[0] * sx
+                vertices[offset++] += newRgba[1] * sx
+                vertices[offset++] += newRgba[2] * sx
+                offset ++ // Alpha component stays the same
                 vertexArray.updateBuffer(vertices, offset - COLOR_COMPONENT_COUNT, COLOR_COMPONENT_COUNT)
             } else {
                 offset += COLOR_COMPONENT_COUNT // Skip the color of the current vertex

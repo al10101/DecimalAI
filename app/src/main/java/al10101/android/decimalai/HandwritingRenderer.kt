@@ -43,8 +43,8 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
             height.toFloat() / width.toFloat()
         }
 
-        Log.i(RENDERER_TAG, "Width > height? $landscape")
-        Log.i(RENDERER_TAG, "Ratio= %8.4f".format(ratio))
+        Log.i(RENDERER_TAG, "Landscape? $landscape")
+        Log.i(RENDERER_TAG, "Ratio= %.4f".format(ratio))
 
         // Since it is a square, we will set the quad's dimensions the same: 2f -> from -1 to +1
         var qWidth = 2f
@@ -57,10 +57,12 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
             qHeight /= ratio
         }
 
+        Log.i(RENDERER_TAG, "Dims: W= %.4f  Y= %.4f".format(qWidth, qHeight))
+
         // Finally, we define the quad with the corrected dimensions
-        val canvasColor = floatArrayOf(0f, 0f, 0f, 1f)
+        val black = floatArrayOf(0f, 0f, 0f, 1f)
         val slicesPerAxis = 20
-        canvas = Grid(qWidth, qHeight, canvasColor, slicesPerAxis, slicesPerAxis)
+        canvas = Grid(qWidth, qHeight, black, slicesPerAxis, slicesPerAxis)
 
     }
 
@@ -74,6 +76,21 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         // No uniforms for this shader
         canvas.bindData(canvasProgram)
         canvas.draw()
+
+    }
+
+    fun onTouch(normalizedX: Float, normalizedY: Float) {
+
+        // When the user touches the canvas, the corresponding point must be recolored
+        val white = floatArrayOf(1f, 1f, 1f, 1f)
+        canvas.updateColor(normalizedX, normalizedY, white)
+
+    }
+
+    fun onStop() {
+
+        // When the user releases the finger from the screen, the canvas stops the drawing
+        canvas.resetColors()
 
     }
 

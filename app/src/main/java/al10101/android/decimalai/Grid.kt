@@ -5,6 +5,7 @@ import al10101.android.decimalai.utils.VertexArray
 import android.opengl.GLES20.*
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
+import kotlin.math.sqrt
 
 private const val POSITION_COMPONENT_COUNT = 2
 private const val COLOR_COMPONENT_COUNT = 4
@@ -12,10 +13,12 @@ private const val TOTAL_COMPONENT_COUNT = POSITION_COMPONENT_COUNT +
         COLOR_COMPONENT_COUNT
 private const val STRIDE = TOTAL_COMPONENT_COUNT * BYTES_PER_FLOAT
 
-class Grid(width: Float, height: Float, rgba: FloatArray,
+class Grid(width: Float, height: Float, private val rgba: FloatArray,
            private val xSlices: Int, private val ySlices: Int
 ) {
 
+    private val totalVertices = (xSlices + 1) * (ySlices + 1)
+    private val vertices = FloatArray( TOTAL_COMPONENT_COUNT * totalVertices )
     private val vertexArray: VertexArray
     private val vertexIndices = IntBuffer.allocate(xSlices * ySlices * 6)
 
@@ -27,10 +30,9 @@ class Grid(width: Float, height: Float, rgba: FloatArray,
         val x0 = -width/2f
         val y0 = -height/2f
 
-        val vertices = FloatArray( TOTAL_COMPONENT_COUNT * (xSlices+1) * (ySlices+1) )
         var offset = 0
 
-        // Since there is a starting and an ending point extra, both loops have an extra round
+        // Since there is a starting and an ending extra point, both loops have an extra round
         for (i in 0..xSlices) {
             for (j in 0..ySlices) {
                 // Coordinates
@@ -43,11 +45,9 @@ class Grid(width: Float, height: Float, rgba: FloatArray,
                 vertices[offset++] = rgba[3]
             }
         }
-
-        // Set data
         vertexArray = VertexArray(vertices)
 
-        // Order of all the fans (there are 4 triangles per fan: 4 * 3= 12 vertices per quad)
+        // Order of all the fans (there are 2 triangles per fan: 2 * 3= 6 vertices per quad)
         val fan = IntArray(xSlices * ySlices * 6)
         var fanCounter = 0
 
@@ -75,6 +75,52 @@ class Grid(width: Float, height: Float, rgba: FloatArray,
 
     }
 
+    fun updateColor(touchX: Float, touchY: Float, newRgba: FloatArray) {
+
+        // With a fixed radius, compute the distance from the touch to every vertex
+        val radius = 0.05f
+        var offset = 0
+        for (i in 0 until totalVertices) {
+
+            // Coordinates
+            val x = vertices[offset++]
+            val y = vertices[offset++]
+            val diff = floatArrayOf(touchX - x, touchY - y)
+            val length = sqrt(diff[0]*diff[0] + diff[1]*diff[1])
+
+            // Compute the new color with a smooth step as a function of the length
+            
+
+            // Change the color of the current vertex
+            if (length < radius) {
+                vertices[offset++] = newRgba[0]
+                vertices[offset++] = newRgba[1]
+                vertices[offset++] = newRgba[2]
+                vertices[offset++] = newRgba[3]
+                vertexArray.updateBuffer(vertices, offset - COLOR_COMPONENT_COUNT, COLOR_COMPONENT_COUNT)
+            } else {
+                offset += COLOR_COMPONENT_COUNT // Skip the color of the current vertex
+            }
+
+        }
+
+    }
+
+    fun resetColors() {
+        // Change all vertices to the original colors
+        var offset = 0
+        for (i in 0 until totalVertices) {
+            // Skip coordinates
+            offset += POSITION_COMPONENT_COUNT
+            // Color
+            vertices[offset++] = rgba[0]
+            vertices[offset++] = rgba[1]
+            vertices[offset++] = rgba[2]
+            vertices[offset++] = rgba[3]
+            vertexArray.updateBuffer(vertices, offset - COLOR_COMPONENT_COUNT, COLOR_COMPONENT_COUNT)
+        }
+    }
+
     fun bindData(program: CanvasShaderProgram) {
 
         vertexArray.setVertexAttribPointer(
@@ -90,7 +136,10 @@ class Grid(width: Float, height: Float, rgba: FloatArray,
     }
 
     fun draw() {
+        // Uncomment to draw solid, comment to draw wireframe
         glDrawElements(GL_TRIANGLES, xSlices * ySlices * 6, GL_UNSIGNED_INT, vertexIndices)
+        // Uncomment to draw wireframe, comment to draw solid
+        //glDrawElements(GL_LINES, xSlices * ySlices * 6, GL_UNSIGNED_INT, vertexIndices)
     }
 
 }

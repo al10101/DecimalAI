@@ -20,18 +20,25 @@ class HandwritingView(context: Context): GLSurfaceView(context) {
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(ev: MotionEvent): Boolean {
 
-        // Coordinates on screen to perform the drawing
+        // NDC computed from the touch event
         val normalizedX = (ev.x / width) * 2f - 1f
         val normalizedY = -((ev.y / height) * 2f - 1f)
 
         when (ev.action and MotionEvent.ACTION_MASK) {
 
-            MotionEvent.ACTION_MOVE -> {
+            // Either if it is the first touch or a continuous drag, perform the same action: draw
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
                 Log.d(VIEW_TAG, "X= %8.4f  Y=%8.4f".format(normalizedX, normalizedY))
+                queueEvent{
+                    renderer.onTouch(normalizedX, normalizedY)
+                }
             }
 
             MotionEvent.ACTION_UP -> {
                 Log.d(VIEW_TAG, "Handwriting stopped!")
+                queueEvent {
+                    renderer.onStop()
+                }
             }
 
         }

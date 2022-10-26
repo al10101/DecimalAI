@@ -3,9 +3,11 @@ package al10101.android.decimalai
 import al10101.android.decimalai.utils.VIEW_TAG
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.util.Log
 import android.view.MotionEvent
+import java.io.*
 
 class HandwritingView(context: Context): GLSurfaceView(context) {
 
@@ -28,8 +30,8 @@ class HandwritingView(context: Context): GLSurfaceView(context) {
 
             // Either if it is the first touch or a continuous drag, perform the same action: draw
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                Log.d(VIEW_TAG, "X= %8.4f  Y=%8.4f".format(normalizedX, normalizedY))
-                queueEvent{
+                Log.d(VIEW_TAG, "Touch Event: X= %8.4f  Y= %8.4f".format(normalizedX, normalizedY))
+                queueEvent {
                     renderer.onTouch(normalizedX, normalizedY)
                 }
             }

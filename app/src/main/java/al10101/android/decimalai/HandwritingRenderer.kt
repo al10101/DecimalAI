@@ -12,6 +12,8 @@ import java.nio.IntBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
+const val DEBUGGING = false
+
 class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer {
 
     private lateinit var nn: NeuralNetwork
@@ -102,7 +104,7 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         glClear(GL_COLOR_BUFFER_BIT)
 
         // Only draw the debug mode for a fixed amount of time after the user released the screen
-        if (currentTime - timeSinceLastTouch > timeBeforeClean) {
+        if (currentTime - timeSinceLastTouch > timeBeforeClean && DEBUGGING) {
             debugProgram.useProgram()
             debugProgram.setUniforms(frameBufferTexture.texture[0])
             quad.bindData(debugProgram)
@@ -153,13 +155,15 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
         Log.i(RENDERER_TAG, "Scene written to the FBO successfully")
 
-        // Don't forget to return to original projection
-        setProjection()
-
         // Process the fbo values of the whole screen
-        getPixels(nn.xPixels, nn.yPixels)
+        val x = pixelsPreprocessing(nn.xPixels, nn.yPixels)
 
-        // Reset the frame buffer for the next frame
+        Log.i(RENDERER_TAG, "All ${x.size} values prepared to predict with the NN")
+
+
+
+        // Now we return to original projection and reset the frame buffer for the next frame
+        setProjection()
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         glViewport(0, 0, screenWidth, screenHeight)
         glClear(GL_COLOR_BUFFER_BIT)
@@ -167,7 +171,7 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
     }
 
-    private fun getPixels(width: Int, height: Int) {
+    private fun pixelsPreprocessing(width: Int, height: Int): FloatArray {
 
         val totalSize = nn.inputs
 
@@ -180,7 +184,7 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         glPixelStorei(GL_PACK_ALIGNMENT, 1)
         glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixelsRGB)
 
-        // Save all colors to a float array as a grayscale value
+        // Save all colors to a float array as grayscale values
         val pixelsGray = FloatArray(totalSize)
         for (i in 0 until totalSize) {
             // Since the gray scale is good already and we defined the pixelsRGB to be just with 1 component,
@@ -189,10 +193,33 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
             pixelsGray[i] = Color.red(pixelsRGB[i]) / 255f
         }
 
-        // Now, we move all
+        var temp: Float
 
-        Log.i(RENDERER_TAG, "All $totalSize values stored in memory")
-        Log.d(RENDERER_TAG, pixelsGray.contentToString())
+        // Ok, this next part is a little bit tricky. By now, we have all the pixels from low to high
+        // rows. We need to reverse all those rows so the number is actually read correctly
+        for (i in 0 until width) {
+            for (j in 0 until height / 2) { // Only half the values so we don't end up with the same result
+                val ij = j * height + i
+                val ijj = (height - j - 1) * height + i
+                temp = pixelsGray[ijj]
+                pixelsGray[ijj] = pixelsGray[ij]
+                pixelsGray[ij] = temp
+            }
+        }
+
+        // As a final step to match the user handwritten digit to the NN input form, we take the
+        // transpose as if the pixels were a 20x20 matrix
+        for (i in 0 until width) {
+            for (j in 0 until i) { // Only the first diagonal so we don't end up with the same result
+                val ij = j * height + i
+                val ji = i * width + j
+                temp = pixelsGray[ji]
+                pixelsGray[ji] = pixelsGray[ij]
+                pixelsGray[ij] = temp
+            }
+        }
+
+        return pixelsGray
 
     }
 

@@ -4,6 +4,7 @@ import al10101.android.decimalai.utils.ShaderUtils
 import android.content.Context
 import android.opengl.GLES20.glUseProgram
 
+const val U_PROJECTION_MATRIX = "u_ProjectionMatrix"
 const val U_TEXTURE_UNIT = "u_TextureUnit"
 
 const val A_POSITION = "a_Position"

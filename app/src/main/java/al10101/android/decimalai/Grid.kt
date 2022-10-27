@@ -3,6 +3,8 @@ package al10101.android.decimalai
 import al10101.android.decimalai.utils.BYTES_PER_FLOAT
 import al10101.android.decimalai.utils.VertexArray
 import android.opengl.GLES20.*
+import android.opengl.Matrix
+import android.opengl.Matrix.multiplyMV
 import java.nio.IntBuffer
 import kotlin.math.abs
 import kotlin.math.min
@@ -76,7 +78,7 @@ class Grid(width: Float, height: Float, private val rgba: FloatArray,
 
     }
 
-    fun updateColor(landscape: Boolean, ratio: Float, touchX: Float, touchY: Float, newRgba: FloatArray) {
+    fun updateColor(touchX: Float, touchY: Float, newRgba: FloatArray) {
 
         val maxValue = 0.16f
 
@@ -87,16 +89,7 @@ class Grid(width: Float, height: Float, private val rgba: FloatArray,
             // Coordinates
             val x = vertices[offset++]
             val y = vertices[offset++]
-
-            // Since all these operations are being performed in NDC space, we must transform back when coloring
-            // to counter the fact that there was no transformation applied to the event (touch) coordinates
             val diff = floatArrayOf(touchX - x, touchY - y)
-            if (landscape) {
-                diff[0] *= ratio
-            } else {
-                diff[1] *= ratio
-            }
-
             val length = sqrt(diff[0]*diff[0] + diff[1]*diff[1])
 
             // Clamp the color change to 0 to maxValue

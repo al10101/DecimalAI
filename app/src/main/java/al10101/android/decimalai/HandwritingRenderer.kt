@@ -58,7 +58,7 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         canvas = Grid(2f, 2f, black, slicesPerAxis, slicesPerAxis)
 
         // We can define the NN here already
-        nn = NeuralNetwork()
+        nn = NeuralNetwork(context)
 
         globalStartTime = System.nanoTime()
 
@@ -138,8 +138,9 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         multiplyMV(touchVector, 0, inverseProjectionMatrix, 0, normalizedVector, 0)
 
         // When the user touches the canvas, the corresponding point must be recolored
-        val white = floatArrayOf(1f, 1f, 1f, 1f)
-        canvas.updateColor(touchVector[0], touchVector[1], white)
+        val lightWhite = 1f
+        val drawingColor = floatArrayOf(lightWhite, lightWhite, lightWhite, 1f)
+        canvas.updateColor(touchVector[0], touchVector[1], drawingColor)
 
     }
 
@@ -158,9 +159,12 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         // Process the fbo values of the whole screen
         val x = pixelsPreprocessing(nn.xPixels, nn.yPixels)
 
-        Log.i(RENDERER_TAG, "All ${x.size} values prepared to predict with the NN")
+        Log.i(RENDERER_TAG, "All ${x.size} values prepared to be used by the NN")
 
+        // Compute prediction
+        val h = nn.forward(x)
 
+        Log.i(RENDERER_TAG, "Probabilities: ${h.contentToString()}")
 
         // Now we return to original projection and reset the frame buffer for the next frame
         setProjection()

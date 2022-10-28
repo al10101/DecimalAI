@@ -18,7 +18,7 @@ import java.nio.IntBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-const val DEBUGGING = true
+private const val DEBUGGING = false
 
 class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer {
 
@@ -153,7 +153,7 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
     }
 
-    fun onStop() {
+    fun onStop(): FloatArray {
 
         // Prepare the fbo to render with the correct number of pixels that the NN needs
         frameBufferTexture.useFBO(nn.xPixels, nn.yPixels)
@@ -172,8 +172,14 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
         // Compute prediction
         val h = nn.forward(x)
-        val p = nn.probabilityToClass(h)
-        val cert = if (p != null) { nn.certainty(h, p) } else { 0f }
+        var p = nn.probabilityToClass(h)
+        var cert = if (p != null) { nn.certainty(h, p) } else { 0f }
+
+        // There is a threshold value that serves to know if the value will be actually null
+        if (p != null && cert < 1f) {
+            p = null
+            cert = 0f
+        }
 
         Log.i(RENDERER_TAG, "Probabilities: ${h.contentToString()}")
         Log.i(RENDERER_TAG, "Class= $p (${cert}%)")
@@ -184,6 +190,10 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         glViewport(0, 0, screenWidth, screenHeight)
         glClear(GL_COLOR_BUFFER_BIT)
         glDisable(GL_DEPTH_TEST)
+
+        // We set the digit as a float to return the value easier, but actually it will be re-converted
+        // to integer in the next step
+        return floatArrayOf((p ?: -1).toFloat(), cert)
 
     }
 

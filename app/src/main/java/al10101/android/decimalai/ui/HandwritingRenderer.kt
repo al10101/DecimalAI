@@ -147,7 +147,7 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         // When the user touches the canvas, the corresponding point must be recolored. The color of the
         // handwritten digit is set to match the color of the training data. It is not exactly the same and
         // the model would mistake digits if the digit does not match the correct luminosity
-        val luminosity = if (landscape) { 0.9f } else { 1f }
+        val luminosity = 1f
         val white = floatArrayOf(luminosity, luminosity, luminosity, 1f)
         canvas.updateColor(touchVector[0], touchVector[1], white)
 
@@ -175,14 +175,14 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         var p = nn.probabilityToClass(h)
         var cert = if (p != null) { nn.certainty(h, p) } else { 0f }
 
-        // There is a threshold value that serves to know if the value will be actually null
-        if (p != null && cert < 1f) {
+        Log.i(RENDERER_TAG, "Probabilities: ${h.contentToString()}")
+        Log.i(RENDERER_TAG, "Class= $p (${cert}%)")
+
+        // There is a threshold value that serves to know if the prediction is actually null
+        if (p != null && cert < 18f) {
             p = null
             cert = 0f
         }
-
-        Log.i(RENDERER_TAG, "Probabilities: ${h.contentToString()}")
-        Log.i(RENDERER_TAG, "Class= $p (${cert}%)")
 
         // Now we return to original projection and reset the frame buffer for the next frame
         setProjection()
@@ -191,7 +191,7 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         glClear(GL_COLOR_BUFFER_BIT)
         glDisable(GL_DEPTH_TEST)
 
-        // We set the digit as a float to return the value easier, but actually it will be re-converted
+        // We set the digit as a float to return the value easier, but it will be re-converted
         // to integer in the next step
         return floatArrayOf((p ?: -1).toFloat(), cert)
 

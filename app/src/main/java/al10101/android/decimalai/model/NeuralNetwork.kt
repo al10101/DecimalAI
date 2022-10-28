@@ -93,17 +93,10 @@ class NeuralNetwork(context: Context) {
 
     fun certainty(h: FloatArray, p: Int): Float {
 
-        // Identify the minimum and start to count from there
+        // Count the total probabilities
         var sum = 0f
         for (prob in h) {
-            if (prob < sum) {
-                sum += prob
-            }
-        }
-
-        // Since we identified the minimum, it is kind of normalized and we can start to count the total probabilities
-        for (prob in h) {
-            sum += abs(prob)
+            sum += abs(prob) // Abs just in case
         }
 
         return 100f * abs(h[p]) / sum

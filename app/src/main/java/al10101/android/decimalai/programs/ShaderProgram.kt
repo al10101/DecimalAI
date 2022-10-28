@@ -1,5 +1,6 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.programs
 
+import al10101.android.decimalai.readTextFileFromResource
 import al10101.android.decimalai.utils.ShaderUtils
 import android.content.Context
 import android.opengl.GLES20.glUseProgram

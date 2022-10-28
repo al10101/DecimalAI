@@ -1,5 +1,6 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.model
 
+import al10101.android.decimalai.programs.DebugShaderProgram
 import al10101.android.decimalai.utils.BYTES_PER_FLOAT
 import al10101.android.decimalai.utils.VertexArray
 import android.opengl.GLES20.*

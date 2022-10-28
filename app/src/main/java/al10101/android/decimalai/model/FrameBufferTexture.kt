@@ -1,4 +1,4 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.model
 
 import al10101.android.decimalai.utils.MODEL_TAG
 import al10101.android.decimalai.utils.RENDERER_TAG

@@ -1,12 +1,10 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.model
 
+import al10101.android.decimalai.programs.CanvasShaderProgram
 import al10101.android.decimalai.utils.BYTES_PER_FLOAT
 import al10101.android.decimalai.utils.VertexArray
 import android.opengl.GLES20.*
-import android.opengl.Matrix
-import android.opengl.Matrix.multiplyMV
 import java.nio.IntBuffer
-import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -80,7 +78,9 @@ class Grid(width: Float, height: Float, private val rgba: FloatArray,
 
     fun updateColor(touchX: Float, touchY: Float, newRgba: FloatArray) {
 
-        val maxValue = 0.16f
+        val minValue = -0.08f
+        val maxValue =  0.22f
+        val clamp = 0.3f
 
         // Iterate through all vertices to check and update each one
         var offset = 0
@@ -95,8 +95,8 @@ class Grid(width: Float, height: Float, private val rgba: FloatArray,
             // Clamp the color change to 0 to maxValue
             if (length < maxValue) {
                 // Compute smooth step and add to the color
-                var sx = (length - maxValue) / (-maxValue)
-                sx *= sx * (3f - 2f * sx)
+                var sx = (length - maxValue) / (minValue - maxValue)
+                sx *= sx * (3f - 2f * sx) * clamp
                 vertices[offset++] += newRgba[0] * sx
                 vertices[offset++] += newRgba[1] * sx
                 vertices[offset++] += newRgba[2] * sx

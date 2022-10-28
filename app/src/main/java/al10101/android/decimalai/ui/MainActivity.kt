@@ -1,5 +1,6 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.ui
 
+import al10101.android.decimalai.ui.HandwritingView
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 

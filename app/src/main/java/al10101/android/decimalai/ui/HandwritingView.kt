@@ -1,13 +1,11 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.ui
 
 import al10101.android.decimalai.utils.VIEW_TAG
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.util.Log
 import android.view.MotionEvent
-import java.io.*
 
 class HandwritingView(context: Context): GLSurfaceView(context) {
 

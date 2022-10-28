@@ -1,5 +1,11 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.ui
 
+import al10101.android.decimalai.model.FrameBufferTexture
+import al10101.android.decimalai.model.Grid
+import al10101.android.decimalai.model.NeuralNetwork
+import al10101.android.decimalai.model.Quad
+import al10101.android.decimalai.programs.CanvasShaderProgram
+import al10101.android.decimalai.programs.DebugShaderProgram
 import al10101.android.decimalai.utils.NANOSECONDS
 import al10101.android.decimalai.utils.RENDERER_TAG
 import android.content.Context
@@ -12,7 +18,7 @@ import java.nio.IntBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-const val DEBUGGING = false
+const val DEBUGGING = true
 
 class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer {
 
@@ -53,9 +59,10 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         quad = Quad(2f, 2f)
 
         // We define the canvas to occupy the whole screen AFTER the orthographic projection is applied
-        val black = floatArrayOf(0f, 0f, 0f, 1f)
-        val slicesPerAxis = 60
-        canvas = Grid(2f, 2f, black, slicesPerAxis, slicesPerAxis)
+        val lightBlack = 0.04f
+        val bgColor = floatArrayOf(lightBlack, lightBlack, lightBlack, 1f)
+        val slicesPerAxis = 80
+        canvas = Grid(2f, 2f, bgColor, slicesPerAxis, slicesPerAxis)
 
         // We can define the NN here already
         nn = NeuralNetwork(context)
@@ -137,10 +144,12 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
         val normalizedVector = floatArrayOf(normalizedX, normalizedY, 0f, 1f)
         multiplyMV(touchVector, 0, inverseProjectionMatrix, 0, normalizedVector, 0)
 
-        // When the user touches the canvas, the corresponding point must be recolored
-        val lightWhite = 1f
-        val drawingColor = floatArrayOf(lightWhite, lightWhite, lightWhite, 1f)
-        canvas.updateColor(touchVector[0], touchVector[1], drawingColor)
+        // When the user touches the canvas, the corresponding point must be recolored. The color of the
+        // handwritten digit is set to match the color of the training data. It is not exactly the same and
+        // the model would mistake digits if the digit does not match the correct luminosity
+        val luminosity = if (landscape) { 0.9f } else { 1f }
+        val white = floatArrayOf(luminosity, luminosity, luminosity, 1f)
+        canvas.updateColor(touchVector[0], touchVector[1], white)
 
     }
 
@@ -163,8 +172,11 @@ class HandwritingRenderer(private val context: Context): GLSurfaceView.Renderer 
 
         // Compute prediction
         val h = nn.forward(x)
+        val p = nn.probabilityToClass(h)
+        val cert = if (p != null) { nn.certainty(h, p) } else { 0f }
 
         Log.i(RENDERER_TAG, "Probabilities: ${h.contentToString()}")
+        Log.i(RENDERER_TAG, "Class= $p (${cert}%)")
 
         // Now we return to original projection and reset the frame buffer for the next frame
         setProjection()

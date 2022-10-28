@@ -1,5 +1,6 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.programs
 
+import al10101.android.decimalai.*
 import android.content.Context
 import android.opengl.GLES20.*
 

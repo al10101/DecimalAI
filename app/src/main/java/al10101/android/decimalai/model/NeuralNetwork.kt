@@ -1,10 +1,11 @@
-package al10101.android.decimalai
+package al10101.android.decimalai.model
 
 import al10101.android.decimalai.utils.MODEL_TAG
 import android.content.Context
 import android.util.Log
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import kotlin.math.abs
 import kotlin.math.exp
 
 class NeuralNetwork(context: Context) {
@@ -66,6 +67,46 @@ class NeuralNetwork(context: Context) {
         sigmoid(a3)
 
         return a3
+
+    }
+
+    fun probabilityToClass(h: FloatArray): Int? {
+
+        val m = h.size
+        var largestProb = 0f
+        var mClass = 0
+
+        for (i in 0 until m) {
+            val prob = h[i]
+            if (prob > largestProb) {
+                largestProb = prob
+                mClass = i
+            }
+            if (prob < -1f) {
+                return null
+            }
+        }
+
+        return mClass
+
+    }
+
+    fun certainty(h: FloatArray, p: Int): Float {
+
+        // Identify the minimum and start to count from there
+        var sum = 0f
+        for (prob in h) {
+            if (prob < sum) {
+                sum += prob
+            }
+        }
+
+        // Since we identified the minimum, it is kind of normalized and we can start to count the total probabilities
+        for (prob in h) {
+            sum += abs(prob)
+        }
+
+        return 100f * abs(h[p]) / sum
 
     }
 
